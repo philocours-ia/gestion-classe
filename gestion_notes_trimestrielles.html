@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestion des Notes - Terminale (Trimestriel)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-8">
+      <h1 class="text-3xl font-bold">📚 Gestion des Notes – Évaluation Trimestrielle</h1>
+      <button onclick="exporterPDF()" 
+              class="bg-blue-600 hover:bg-blue-700 px-5 py-2 rounded-lg flex items-center gap-2">
+        📄 Exporter en PDF
+      </button>
+    </div>
+
+    <!-- Élèves -->
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">👥 Élèves</h2>
+      <div class="flex gap-2 mb-4">
+        <input id="prenom" type="text" placeholder="Prénom" class="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 flex-1">
+        <input id="nom" type="text" placeholder="Nom" class="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 flex-1">
+        <button onclick="ajouterEleve()" class="bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded">Ajouter</button>
+      </div>
+      <div id="eleves-list"></div>
+    </div>
+
+    <!-- Sélecteur de Trimestre -->
+    <div class="mb-6 flex items-center gap-4">
+      <label class="font-semibold">Trimestre :</label>
+      <select id="trimestre" onchange="changerTrimestre()" class="bg-zinc-900 border border-zinc-700 rounded px-4 py-2">
+        <option value="1">Trimestre 1</option>
+        <option value="2">Trimestre 2</option>
+        <option value="3">Trimestre 3</option>
+      </select>
+      <span id="moyenne-generale" class="ml-8 text-emerald-400 font-bold text-lg"></span>
+    </div>
+
+    <!-- Notes du trimestre -->
+    <div class="mb-8">
+      <h2 class="text-xl font-semibold mb-4">📝 Notes du trimestre (Examens + Coefficients)</h2>
+      <div id="notes-table"></div>
+    </div>
+
+    <!-- Conseil de classe -->
+    <div>
+      <h2 class="text-xl font-semibold mb-4">🏛️ Conseil de classe – Décisions finales</h2>
+      <div id="conseil-table"></div>
+    </div>
+  </div>
+
+<script>
+  let eleves = JSON.parse(localStorage.getItem('eleves')) || [];
+  let notes = JSON.parse(localStorage.getItem('notes')) || {};
+  let decisions = JSON.parse(localStorage.getItem('decisions')) || {};
+  const matieres = ['Philosophie','Mathématiques','Malagasy','Français','Anglais','EPS','Physiques','SVT','Histo-Géo'];
+  let trimestreActuel = 1;
+
+  function sauvegarder() {
+    localStorage.setItem('eleves', JSON.stringify(eleves));
+    localStorage.setItem('notes', JSON.stringify(notes));
+    localStorage.setItem('decisions', JSON.stringify(decisions));
+  }
+
+  function ajouterEleve() {
+    const prenom = document.getElementById('prenom').value.trim();
+    const nom = document.getElementById('nom').value.trim();
+    if (!prenom || !nom) return alert('Prénom et nom requis');
+
+    eleves.push({ prenom, nom });
+    sauvegarder();
+    document.getElementById('prenom').value = '';
+    document.getElementById('nom').value = '';
+    afficherEleves();
+    afficherNotes();
+    afficherConseil();
+  }
+
+  function afficherEleves() {
+    const container = document.getElementById('eleves-list');
+    if (eleves.length === 0) {
+      container.innerHTML = '<p class="text-zinc-400">Aucun élève</p>';
+      return;
+    }
+    let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-2">';
+    eleves.forEach((e, i) => {
+      html += `
+        <div class="flex justify-between items-center bg-zinc-900 px-4 py-2 rounded">
+          <span>${e.prenom} ${e.nom}</span>
+          <button onclick="supprimerEleve(${i})" class="text-red-400 hover:text-red-500">×</button>
+        </div>`;
+    });
+    html += '</div>';
+    container.innerHTML = html;
+  }
+
+  function supprimerEleve(i) {
+    if (!confirm('Supprimer cet élève ?')) return;
+    eleves.splice(i, 1);
+    delete notes[i];
+    delete decisions[i];
+    sauvegarder();
+    afficherEleves();
+    afficherNotes();
+    afficherConseil();
+  }
+
+  function changerTrimestre() {
+    trimestreActuel = parseInt(document.getElementById('trimestre').value);
+    afficherNotes();
+  }
+
+  function calculerMoyenneTrimestre(i, trim) {
+    let totalPoints = 0;
+    let totalCoef = 0;
+    if (!notes[i] || !notes[i][trim]) return null;
+
+    matieres.forEach(m => {
+      const data = notes[i][trim][m];
+      if (data && data.note != null && data.coef > 0) {
+        totalPoints += data.note * data.coef;
+        totalCoef += data.coef;
+      }
+    });
+    return totalCoef > 0 ? (totalPoints / totalCoef).toFixed(2) : null;
+  }
+
+  function calculerMoyenneAnnuelle(i) {
+    let total = 0;
+    let count = 0;
+    for (let t = 1; t <= 3; t++) {
+      const moy = calculerMoyenneTrimestre(i, t);
+      if (moy !== null) {
+        total += parseFloat(moy);
+        count++;
+      }
+    }
+    return count > 0 ? (total / count).toFixed(2) : null;
+  }
+
+  function afficherNotes() {
+    const container = document.getElementById('notes-table');
+    container.innerHTML = '';
+    if (eleves.length === 0) {
+      container.innerHTML = '<p class="text-zinc-400">Ajoutez des élèves.</p>';
+      return;
+    }
+
+    let html = `
+      <table class="w-full text-sm border border-zinc-800">
+        <thead>
+          <tr class="bg-zinc-900">
+            <th class="text-left p-3">Élève</th>
+    `;
+    matieres.forEach(m => {
+      html += `<th class="text-center p-2">${m}<br><span class="text-[10px] text-amber-400">Note / Coef</span></th>`;
+    });
+    html += `<th class="text-center p-3 bg-emerald-900">Moyenne<br>Trimestre</th></tr></thead><tbody>`;
+
+    eleves.forEach((e, i) => {
+      const moyTrim = calculerMoyenneTrimestre(i, trimestreActuel);
+      html += `<tr class="border-t border-zinc-800"><td class="p-3 font-medium">${e.prenom} ${e.nom}</td>`;
+      matieres.forEach(m => {
+        const data = (notes[i] && notes[i][trimestreActuel] && notes[i][trimestreActuel][m]) || {};
+        html += `
+          <td class="p-2">
+            <div class="flex flex-col gap-1">
+              <input type="number" step="0.5" min="0" max="20" value="${data.note || ''}" 
+                     class="w-16 bg-zinc-900 border border-zinc-700 rounded px-2 py-1 text-center"
+                     onchange="sauverNote(${i}, '${m}', this.value, 'note')">
+              <input type="number" step="0.5" min="0" max="10" value="${data.coef || ''}" 
+                     class="w-16 bg-zinc-900 border border-amber-600 rounded px-2 py-1 text-center text-amber-400"
+                     onchange="sauverNote(${i}, '${m}', this.value, 'coef')" placeholder="Coef">
+            </div>
+          </td>
+        `;
+      });
+      html += `
+        <td class="p-3 text-center font-bold text-emerald-400 text-lg">
+          ${moyTrim !== null ? moyTrim : '—'}
+        </td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+
+    // Moyenne annuelle globale
+    const gen = document.getElementById('moyenne-generale');
+    gen.innerHTML = `Moyenne annuelle (3 trimestres) : —`;
+  }
+
+  function sauverNote(i, matiere, valeur, type) {
+    if (!notes[i]) notes[i] = {};
+    if (!notes[i][trimestreActuel]) notes[i][trimestreActuel] = {};
+    if (!notes[i][trimestreActuel][matiere]) notes[i][trimestreActuel][matiere] = {};
+
+    if (type === 'note') {
+      notes[i][trimestreActuel][matiere].note = parseFloat(valeur) || null;
+    } else {
+      notes[i][trimestreActuel][matiere].coef = parseFloat(valeur) || null;
+    }
+    sauvegarder();
+    afficherNotes();
+    afficherConseil();
+  }
+
+  function afficherConseil() {
+    const container = document.getElementById('conseil-table');
+    if (eleves.length === 0) {
+      container.innerHTML = '';
+      return;
+    }
+
+    let html = `
+      <table class="w-full text-sm border border-zinc-800">
+        <thead>
+          <tr class="bg-zinc-900">
+            <th class="text-left p-3">Élève</th>
+            <th class="text-center p-3">Moyenne Annuelle</th>
+            <th class="text-center p-3">Décision Conseil de classe</th>
+          </tr>
+        </thead>
+        <tbody>`;
+
+    eleves.forEach((e, i) => {
+      const moyAnnuelle = calculerMoyenneAnnuelle(i);
+      const decision = decisions[i] || '';
+      html += `
+        <tr class="border-t border-zinc-800">
+          <td class="p-3 font-medium">${e.prenom} ${e.nom}</td>
+          <td class="p-3 text-center font-bold text-emerald-400">${moyAnnuelle !== null ? moyAnnuelle : '—'}</td>
+          <td class="p-3">
+            <select onchange="sauverDecision(${i}, this.value)" class="bg-zinc-900 border border-zinc-700 rounded px-3 py-2 w-full">
+              <option value="">-- Choisir --</option>
+              <option value="Admis" ${decision === 'Admis' ? 'selected' : ''}>Admis</option>
+              <option value="Admis avec mention" ${decision === 'Admis avec mention' ? 'selected' : ''}>Admis avec mention</option>
+              <option value="Redouble" ${decision === 'Redouble' ? 'selected' : ''}>Redouble</option>
+              <option value="Redouble avec rattrapage" ${decision === 'Redouble avec rattrapage' ? 'selected' : ''}>Redouble avec rattrapage</option>
+              <option value="À revoir" ${decision === 'À revoir' ? 'selected' : ''}>À revoir</option>
+              <option value="Autre" ${decision === 'Autre' ? 'selected' : ''}>Autre</option>
+            </select>
+          </td>
+        </tr>`;
+    });
+    html += '</tbody></table>';
+    container.innerHTML = html;
+  }
+
+  function sauverDecision(i, valeur) {
+    decisions[i] = valeur;
+    sauvegarder();
+  }
+
+  function exporterPDF() {
+    window.print();
+  }
+
+  function init() {
+    document.getElementById('trimestre').value = trimestreActuel;
+    afficherEleves();
+    afficherNotes();
+    afficherConseil();
+  }
+  init();
+</script>
+</body>
+</html>

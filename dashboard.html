@@ -10,14 +10,14 @@
 <body class="bg-zinc-950 text-white">
   <div class="flex">
     <!-- Sidebar -->
-    <div class="w-64 bg-zinc-900 min-h-screen p-6">
+    <div class="w-64 bg-zinc-900 min-h-screen p-6 flex flex-col">
       <h2 class="text-2xl font-bold mb-8">Gestion Terminale</h2>
-      <nav class="space-y-1">
-        <a href="#eleves" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-users w-5"></i> Liste des élèves</a>
-        <a href="#appel" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-clipboard-check w-5"></i> Registre d'appel</a>
-        <a href="#rapports" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-chart-bar w-5"></i> Rapports journaliers</a>
-        <a href="#notes" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-graduation-cap w-5"></i> Feuille de notes</a>
-        <a href="#bulletins" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-file-lines w-5"></i> Générateur de bulletins</a>
+      <nav class="space-y-1 flex-1">
+        <a href="#" onclick="showSection('eleves')" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-users w-5"></i> Liste des élèves</a>
+        <a href="#" onclick="showSection('appel')" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-clipboard-check w-5"></i> Registre d'appel</a>
+        <a href="#" onclick="showSection('rapports')" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-chart-bar w-5"></i> Rapports journaliers</a>
+        <a href="#" onclick="showSection('notes')" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-graduation-cap w-5"></i> Feuille de notes</a>
+        <a href="#" onclick="showSection('bulletins')" class="flex items-center gap-3 px-4 py-3 rounded-2xl hover:bg-zinc-800"><i class="fa-solid fa-file-lines w-5"></i> Générateur de bulletins</a>
       </nav>
       <div class="mt-auto pt-8">
         <a href="login.html" class="text-sm text-zinc-400 hover:text-white flex items-center gap-2"><i class="fa-solid fa-sign-out-alt"></i> Déconnexion</a>
@@ -34,7 +34,7 @@
             <input id="nom" placeholder="Nom" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3">
             <input id="prenom" placeholder="Prénom" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3">
             <input id="numero" placeholder="Numéro" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3">
-            <button onclick="ajouterEleve()" class="bg-emerald-600 px-6 rounded-2xl">Ajouter</button>
+            <button onclick="ajouterEleve()" class="bg-emerald-600 hover:bg-emerald-700 px-6 rounded-2xl transition-colors">Ajouter</button>
           </div>
           <table class="w-full">
             <thead><tr class="text-left text-zinc-400"><th class="pb-3">Nom</th><th>Prénom</th><th>Numéro</th><th></th></tr></thead>
@@ -49,7 +49,7 @@
         <div class="bg-zinc-900 p-6 rounded-3xl">
           <input type="date" id="date-appel" class="mb-4 bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2">
           <div id="appel-liste"></div>
-          <button onclick="sauvegarderAppel()" class="mt-4 bg-emerald-600 px-6 py-3 rounded-2xl">Enregistrer l'appel</button>
+          <button onclick="sauvegarderAppel()" class="mt-4 bg-emerald-600 hover:bg-emerald-700 px-6 py-3 rounded-2xl transition-colors">Enregistrer l'appel</button>
         </div>
       </div>
 
@@ -73,7 +73,7 @@
         <div class="bg-zinc-900 p-6 rounded-3xl">
           <div class="flex gap-3 mb-6">
             <input id="nom-bulletin" placeholder="Nom de l'élève" class="flex-1 bg-zinc-800 border border-zinc-700 rounded-2xl px-4 py-3">
-            <button onclick="genererBulletin()" class="bg-emerald-600 px-8 rounded-2xl">Générer</button>
+            <button onclick="genererBulletin()" class="bg-emerald-600 hover:bg-emerald-700 px-8 rounded-2xl transition-colors">Générer</button>
           </div>
           <div id="bulletin-result"></div>
         </div>
@@ -95,17 +95,28 @@
       localStorage.setItem('notes', JSON.stringify(notes));
     }
 
+    // === Navigation entre sections ===
+    function showSection(sectionId) {
+      document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
+      document.getElementById(sectionId).classList.remove('hidden');
+
+      if (sectionId === 'eleves') afficherEleves();
+      if (sectionId === 'appel') afficherAppel();
+      if (sectionId === 'rapports') afficherRapports();
+      if (sectionId === 'notes') afficherNotes();
+    }
+
     // === Élèves ===
     function afficherEleves() {
       const tbody = document.getElementById('liste-eleves');
       tbody.innerHTML = '';
-      eleves.forEach((e, i) => {
+      eleves.forEach((eleve, index) => {
         const tr = document.createElement('tr');
         tr.innerHTML = `
-          <td class="py-3">${e.nom}</td>
-          <td>${e.prenom}</td>
-          <td>${e.numero}</td>
-          <td><button onclick="supprimerEleve(${i})" class="text-red-400"><i class="fa-solid fa-trash"></i></button></td>
+          <td class="py-2">${eleve.nom}</td>
+          <td>${eleve.prenom}</td>
+          <td>${eleve.numero}</td>
+          <td><button onclick="supprimerEleve(${index})" class="text-red-400 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></td>
         `;
         tbody.appendChild(tr);
       });
@@ -115,42 +126,49 @@
       const nom = document.getElementById('nom').value.trim();
       const prenom = document.getElementById('prenom').value.trim();
       const numero = document.getElementById('numero').value.trim();
-      if (!nom || !prenom) return alert('Nom et prénom requis');
-      eleves.push({nom, prenom, numero});
+
+      if (!nom || !prenom || !numero) {
+        alert("Veuillez remplir tous les champs !");
+        return;
+      }
+
+      eleves.push({ nom, prenom, numero });
       sauvegarder();
       afficherEleves();
+
+      // Vider les champs
       document.getElementById('nom').value = '';
       document.getElementById('prenom').value = '';
       document.getElementById('numero').value = '';
     }
 
-    function supprimerEleve(i) {
-      if (confirm('Supprimer cet élève ?')) {
-        eleves.splice(i, 1);
+    function supprimerEleve(index) {
+      if (confirm("Supprimer cet élève ?")) {
+        eleves.splice(index, 1);
         sauvegarder();
         afficherEleves();
       }
     }
 
-    // === Appel ===
+    // === Registre d'appel ===
     function afficherAppel() {
-      const date = document.getElementById('date-appel').value || new Date().toISOString().split('T')[0];
-      document.getElementById('date-appel').value = date;
       const container = document.getElementById('appel-liste');
       container.innerHTML = '';
+
       if (eleves.length === 0) {
-        container.innerHTML = '<p class="text-zinc-400">Ajoutez des élèves d’abord.</p>';
+        container.innerHTML = '<p class="text-zinc-400">Aucun élève enregistré.</p>';
         return;
       }
-      eleves.forEach((e, i) => {
+
+      eleves.forEach((eleve, index) => {
         const div = document.createElement('div');
-        div.className = 'flex items-center justify-between py-2 border-b border-zinc-800';
+        div.className = 'flex items-center justify-between py-2 border-b border-zinc-700';
         div.innerHTML = `
-          <span>${e.prenom} ${e.nom}</span>
+          <span>${eleve.prenom} ${eleve.nom}</span>
           <div class="flex gap-4">
-            <label><input type="radio" name="appel-${i}" value="present" checked> Présent</label>
-            <label><input type="radio" name="appel-${i}" value="retard"> Retard</label>
-            <label><input type="radio" name="appel-${i}" value="absent"> Absent</label>
+            <label class="flex items-center gap-1"><input type="radio" name="presence-${index}" value="present" checked> Présent</label>
+            <label class="flex items-center gap-1"><input type="radio" name="presence-${index}" value="retard"> Retard</label>
+            <label class="flex items-center gap-1"><input type="radio" name="presence-${index}" value="absent"> Absent</label>
           </div>
         `;
         container.appendChild(div);
@@ -158,116 +176,118 @@
     }
 
     function sauvegarderAppel() {
-      const date = document.getElementById('date-appel').value;
-      appels[date] = [];
-      eleves.forEach((e, i) => {
-        const checked = document.querySelector(`input[name="appel-${i}"]:checked`);
-        appels[date].push({eleve: e, statut: checked ? checked.value : 'present'});
+      const date = document.getElementById('date-appel').value || new Date().toISOString().split('T')[0];
+      const presence = {};
+
+      eleves.forEach((_, index) => {
+        const radios = document.querySelectorAll(`input[name="presence-${index}"]`);
+        radios.forEach(radio => {
+          if (radio.checked) presence[index] = radio.value;
+        });
       });
+
+      appels[date] = presence;
       sauvegarder();
-      alert('Appel enregistré !');
+      alert("Appel enregistré !");
       afficherRapports();
     }
 
-    // === Rapports ===
+    // === Rapports journaliers ===
     function afficherRapports() {
       const container = document.getElementById('rapport-contenu');
       container.innerHTML = '';
-      Object.keys(appels).sort().reverse().forEach(date => {
+
+      const dates = Object.keys(appels).sort().reverse();
+
+      if (dates.length === 0) {
+        container.innerHTML = '<p class="text-zinc-400">Aucun appel enregistré.</p>';
+        return;
+      }
+
+      dates.forEach(date => {
         const data = appels[date];
-        const retards = data.filter(d => d.statut === 'retard').length;
-        const absents = data.filter(d => d.statut === 'absent').length;
-        const div = document.createElement('div');
-        div.className = 'mb-4 p-4 bg-zinc-800 rounded-2xl';
-        div.innerHTML = `
-          <div class="font-semibold">${date}</div>
-          <div class="text-sm mt-1">Retards : <span class="text-amber-400">${retards}</span> | Absents : <span class="text-red-400">${absents}</span></div>
-        `;
-        container.appendChild(div);
+        let html = `<div class="mb-6"><h3 class="font-semibold mb-2">${date}</h3><ul class="space-y-1">`;
+
+        eleves.forEach((eleve, index) => {
+          const status = data[index] || 'present';
+          const color = status === 'absent' ? 'text-red-400' : status === 'retard' ? 'text-amber-400' : 'text-emerald-400';
+          html += `<li>${eleve.prenom} ${eleve.nom} — <span class="${color}">${status}</span></li>`;
+        });
+
+        html += `</ul></div>`;
+        container.innerHTML += html;
       });
     }
 
-    // === Notes ===
+    // === Feuille de notes ===
     function afficherNotes() {
       const container = document.getElementById('notes-table');
       container.innerHTML = '';
+
       if (eleves.length === 0) {
-        container.innerHTML = '<p>Ajoutez des élèves.</p>';
+        container.innerHTML = '<p class="text-zinc-400">Aucun élève.</p>';
         return;
       }
-      let html = '<table class="w-full text-sm"><thead><tr><th>Élève</th>';
-      matieres.forEach(m => html += `<th>${m}</th>`);
-      html += '</tr></thead><tbody>';
-      eleves.forEach((e, i) => {
-        html += `<tr><td>${e.prenom} ${e.nom}</td>`;
-        matieres.forEach(m => {
-          const val = (notes[i] && notes[i][m]) || '';
-          html += `<td><input type="number" step="0.5" min="0" max="20" value="${val}" class="w-16 bg-zinc-800 border border-zinc-700 rounded px-2 py-1" onchange="sauverNote(${i}, '${m}', this.value)"></td>`;
+
+      let html = `<table class="w-full text-sm"><thead><tr class="text-zinc-400"><th class="text-left pb-2">Élève</th>`;
+      matieres.forEach(m => html += `<th class="pb-2">${m}</th>`);
+      html += `</tr></thead><tbody>`;
+
+      eleves.forEach((eleve, index) => {
+        html += `<tr><td class="py-2">${eleve.prenom} ${eleve.nom}</td>`;
+        matieres.forEach(matiere => {
+          const note = notes[`${index}-${matiere}`] || '';
+          html += `<td><input type="number" step="0.5" min="0" max="20" value="${note}" 
+            onchange="sauvegarderNote(${index}, '${matiere}', this.value)" 
+            class="w-16 bg-zinc-800 border border-zinc-700 rounded-xl px-2 py-1 text-center"></td>`;
         });
-        html += '</tr>';
+        html += `</tr>`;
       });
-      html += '</tbody></table>';
+
+      html += `</tbody></table>`;
       container.innerHTML = html;
     }
 
-    function sauverNote(i, matiere, valeur) {
-      if (!notes[i]) notes[i] = {};
-      notes[i][matiere] = parseFloat(valeur) || null;
+    function sauvegarderNote(eleveIndex, matiere, valeur) {
+      notes[`${eleveIndex}-${matiere}`] = parseFloat(valeur) || '';
       sauvegarder();
     }
 
-    // === Bulletin ===
+    // === Générateur de bulletins ===
     function genererBulletin() {
       const nomRecherche = document.getElementById('nom-bulletin').value.trim().toLowerCase();
-      if (!nomRecherche) return alert('Entrez un nom');
-      const idx = eleves.findIndex(e => (e.nom + ' ' + e.prenom).toLowerCase().includes(nomRecherche));
-      if (idx === -1) return alert('Élève introuvable');
+      const result = document.getElementById('bulletin-result');
 
-      const e = eleves[idx];
-      const noteEleve = notes[idx] || {};
+      const eleve = eleves.find(e => 
+        `${e.prenom} ${e.nom}`.toLowerCase().includes(nomRecherche) || 
+        e.nom.toLowerCase().includes(nomRecherche)
+      );
+
+      if (!eleve) {
+        result.innerHTML = `<p class="text-red-400">Élève non trouvé.</p>`;
+        return;
+      }
+
+      let html = `<div class="bg-zinc-800 p-6 rounded-2xl"><h3 class="text-xl font-semibold mb-4">Bulletin de ${eleve.prenom} ${eleve.nom}</h3><table class="w-full"><thead><tr><th>Matière</th><th>Note</th></tr></thead><tbody>`;
+
       let total = 0, count = 0;
-      let html = `<div class="bg-zinc-800 p-8 rounded-3xl"><h3 class="text-2xl mb-4">Bulletin de ${e.prenom} ${e.nom}</h3>`;
-      html += '<table class="w-full mb-6"><thead><tr><th>Matière</th><th>Note</th><th>Appréciation</th></tr></thead><tbody>';
       matieres.forEach(m => {
-        const note = noteEleve[m] || '—';
-        let app = '';
-        if (note !== '—') {
-          if (note >= 16) app = 'Excellent travail, très bon niveau.';
-          else if (note >= 14) app = 'Bon travail, résultats satisfaisants.';
-          else if (note >= 12) app = 'Travail correct, peut progresser.';
-          else if (note >= 10) app = 'Résultats moyens, effort à fournir.';
-          else app = 'Résultats insuffisants, besoin de soutien.';
-        }
-        html += `<tr><td>${m}</td><td>${note}/20</td><td class="text-sm text-zinc-400">${app}</td></tr>`;
-        if (note !== '—') { total += note; count++; }
+        const note = notes[`${eleves.indexOf(eleve)}-${m}`] || 0;
+        html += `<tr><td>${m}</td><td>${note || '-'}</td></tr>`;
+        if (note) { total += note; count++; }
       });
-      html += '</tbody></table>';
-      const moy = count ? (total / count).toFixed(2) : '—';
-      html += `<div class="text-xl font-semibold">Moyenne générale : ${moy}/20</div>`;
-      html += `<div class="mt-6 text-sm text-zinc-400">Appréciation générale : ${moy >= 14 ? 'Excellent élève' : moy >= 12 ? 'Bon élève' : 'Élève en progression'}</div>`;
-      html += '</div>';
-      document.getElementById('bulletin-result').innerHTML = html;
+
+      const moyenne = count > 0 ? (total / count).toFixed(2) : '-';
+      html += `</tbody></table><p class="mt-4 font-semibold">Moyenne générale : ${moyenne}</p></div>`;
+
+      result.innerHTML = html;
     }
 
-    // === Navigation par hash ===
-    function showSection() {
-      document.querySelectorAll('.section').forEach(s => s.classList.add('hidden'));
-      const hash = window.location.hash || '#eleves';
-      const section = document.querySelector(hash);
-      if (section) section.classList.remove('hidden');
-
-      if (hash === '#eleves') afficherEleves();
-      if (hash === '#appel') afficherAppel();
-      if (hash === '#rapports') afficherRapports();
-      if (hash === '#notes') afficherNotes();
-    }
-
-    window.addEventListener('hashchange', showSection);
-    window.addEventListener('load', () => {
-      document.getElementById('date-appel').addEventListener('change', afficherAppel);
-      showSection();
+    // === Initialisation ===
+    window.onload = function() {
+      document.getElementById('eleves').classList.remove('hidden');
       afficherEleves();
-    });
+    }
   </script>
 </body>
 </html>
